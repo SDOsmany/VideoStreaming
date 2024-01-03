@@ -1,4 +1,6 @@
 ﻿@page "/"
+@using Azure.Storage.Blobs
+@using Azure.Storage.Blobs.Models
 
 
     <h3>Upload</h3>
@@ -9,7 +11,62 @@
     <button type="button" class="btn btn-outline-primary">Upload</button>
 
 
-        @code {
+@code {
 
+    private static async Task<BlobContainerClient> CreateSampleContainerAsync(BlobServiceClient blobServiceClient)
+    {
+        // Name the sample container based on new GUID to ensure uniqueness.
+        // The container name must be lowercase.
+        string containerName = "container-" + Guid.NewGuid();
+
+        try
+        {
+            // Create the container
+            BlobContainerClient container = await blobServiceClient.CreateBlobContainerAsync(containerName);
+
+            if (await container.ExistsAsync())
+            {
+                Console.WriteLine("Created container {0}", container.Name);
+                return container;
+            }
         }
+        catch (Azure.RequestFailedException e)
+        {
+            Console.WriteLine("HTTP error code {0}: {1}",
+                                e.Status, e.ErrorCode);
+            Console.WriteLine(e.Message);
+        }
+
+        return null;
+    }
+
+    async static Task ListContainers(BlobServiceClient blobServiceClient,
+                            string prefix,
+                            int? segmentSize)
+    {
+        try
+        {
+            // Call the listing operation and enumerate the result segment.
+            var resultSegment =
+                blobServiceClient.GetBlobContainersAsync(BlobContainerTraits.Metadata, prefix, default)
+                .AsPages(default, segmentSize);
+
+            await foreach (Azure.Page<BlobContainerItem> containerPage in resultSegment)
+            {
+                foreach (BlobContainerItem containerItem in containerPage.Values)
+                {
+                    Console.WriteLine("Container name: {0}", containerItem.Name);
+                }
+
+                Console.WriteLine();
+            }
+        }
+        catch (Azure.RequestFailedException e)
+        {
+                Console.WriteLine(e.Message);
+                Console.ReadLine();
+                throw;
+            }
+        }
+}
 

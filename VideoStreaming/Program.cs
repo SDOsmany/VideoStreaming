@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using VideoStreaming.Data;
+using Microsoft.Extensions.Azure;
+using Azure.Identity;
 
 namespace VideoStreaming;
 
@@ -14,6 +16,12 @@ public class Program
         builder.Services.AddRazorPages();
         builder.Services.AddServerSideBlazor();
         builder.Services.AddSingleton<WeatherForecastService>();
+
+        builder.Services.AddAzureClients(x =>
+        {
+            x.AddBlobServiceClient(new Uri("https://stevieuseast.blob.core.windows.net"));
+            x.UseCredential(new DefaultAzureCredential());
+        });
 
         var app = builder.Build();
 
